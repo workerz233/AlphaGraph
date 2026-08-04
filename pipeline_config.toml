@@ -1,0 +1,456 @@
+# 默认配置：run_pipeline.sh 未显式传参时使用这一组。
+[defaults]
+# 新主线产物命名空间。
+artifact_namespace = "alphagraph"
+
+# Alpha 因子研究结果目录；建图时会复用其中的排名清单，并在全量日 K 上重算固定 10 个因子。
+alpha_factor_results_dir = "alpha/results/all_alpha_daily"
+alpha_factor_top_n = 10
+
+# Conda 环境名。所有 Shell 入口均从这里读取，不在命令中重复配置。
+env_name = "rGNN"
+
+# 配置名：默认跑第一阶段关系感知图聚合版本。
+config_name = "phase1_relation_aware"
+
+# 研报 Markdown 数据目录，相对项目根目录。
+markdown_dir = "reportdata/202601_equity_industry_markdown"
+
+# 多月研报根目录。
+markdown_root = "reportdata"
+
+# 默认多月范围。
+start_month = "202401"
+end_month = "202601"
+
+# 默认多月产物目录名。
+dataset_name = "202401_202601"
+
+# 单月输入时的降级模式：diagnostic 只输出诊断报告。
+single_month_mode = "diagnostic"
+
+# Embedding 模型路径或模型名。优先使用本地 ModelScope 缓存路径。
+model_name = "/root/.cache/modelscope/hub/models/Qwen/Qwen3-Embedding-0___6B"
+
+# 当本地 model_name 路径不存在时的回退模型标识。
+model_name_fallback = "modelscope:Qwen/Qwen3-Embedding-0.6B"
+
+# 报告超边有效月数，单位：月。
+decay_months = 3
+
+# 图快照更新模式：rolling_monthly 表示每个调仓月按滚动窗口重建图。
+graph_snapshot_mode = "rolling_monthly"
+
+# 训练轮数。
+epochs = 20
+
+# 训练目标：ranknet_pairwise 为主线排序学习；regression_mse 保留为收益回归对照组。
+training_objective = "ranknet_pairwise"
+
+# 训练标签：默认使用未来 1 个月超额收益；Sharpe label 用于 label 消融实验。
+training_label = "future_excess_return_1m"
+
+# 三路模态融合模块：concat / gated / cross_encoder。
+fusion_type = "cross_encoder"
+
+# 股票图聚合模块：mean / relation_aware。
+graph_module_type = "mean"
+
+# 关系类型先验：none 为方案 A；learnable 为方案 B，在 R-GAT attention 中端到端学习 type gate。
+edge_type_prior_mode = "none"
+
+# 股票节点池：hs300_zz500 为主线固定指数池；report_only 仅用于消融基线。
+stock_universe = "hs300_zz500"
+
+# 普通股票边构建器，可用逗号组合：report_co_coverage / market_corr_topk / same_industry_topk / kg_llm。
+stock_edge_builders = "report_co_coverage,market_corr_topk,same_industry_topk,kg_llm"
+
+# 行情与指数成分数据源：默认使用免费且无需登录的 akshare；也可显式切换 baostock / tushare。
+market_data_source = "akshare"
+
+# Tushare token 获取地址；请通过环境变量 TUSHARE_TOKEN_URL 配置，不要提交凭据。
+tushare_token_url = ""
+
+# 市场相似边参数。
+market_corr_lookback_days = 60
+market_corr_topk = 10
+market_corr_min_score = 0.1
+
+# 同行业相似边参数。
+industry_topk = 5
+
+# LLM 研报关系抽取参数。API key 必须通过服务器环境变量 LLM_KG_API_KEY 注入。
+llm_kg_enabled = true
+llm_kg_base_url = "https://dashscope.aliyuncs.com/compatible-mode"
+llm_kg_api_key = ""
+llm_kg_model = "qwen3.6-plus"
+# 每篇研报最多送入 LLM 的字符数；调小可减少超时和 token 消耗。
+llm_kg_max_chars = 12000
+# 单篇研报调用 LLM 的超时时间，单位：秒。
+llm_kg_timeout_seconds = 600
+llm_kg_min_confidence = 0.0
+# LLM 原始响应缓存目录；命中缓存时不会再次消耗 token。
+llm_kg_cache_dir = "artifacts/alphagraph/llm_kg_cache"
+# LLM 原始请求/响应/错误日志目录，用于排查为什么没有抽出关系。
+llm_kg_raw_log_dir = "artifacts/alphagraph/llm_kg_raw_logs"
+llm_kg_decay_months = 3
+
+# vLLM 显存利用率，共享 GPU 环境建议保守。目前机器独占，调高以支持更长上下文。
+embedding_vllm_gpu_memory_utilization = "0.5"
+
+# vLLM 最大上下文长度，越大占用显存越多。
+embedding_vllm_max_model_len = "32768"
+
+# 回测每月选股数量 TopK。
+topk = 20
+
+# 回测交易成本，单位 bps，1 bps = 万分之一。
+cost_bps = 1
+
+# 回测执行模式：monthly_label 使用月度标签直接结算；daily 使用月度选股结果驱动日频真实交易。
+execution_mode = "monthly_label"
+
+# 日频交易执行参数，仅 execution_mode = "daily" 时生效。
+entry_delay_days = 1
+stop_loss_pct = 0.08
+trailing_stop_pct = 0.0
+limit_threshold_pct = 9.8
+slippage_bps = 5.0
+max_monthly_turnover = 1.0
+single_stock_max_weight = 0.10
+entry_trigger = "immediate"
+entry_window_days = 15
+min_pullback_pct = 0.03
+max_pullback_pct = 0.08
+breakout_lookback_days = 20
+breakout_volume_multiplier = 1.2
+
+# 交易策略：topk / topk_buffer / momentum_confirmed。
+trading_strategy = "topk"
+
+# 可插拔聚类模块。
+cluster_enabled = false
+cluster_method = "leiden"
+cluster_resolution = 1.2
+cluster_edge_type_weights = "market_corr_topk:0.45,same_industry_topk:0.70,same_industry:1.20,text_similarity:1.35,kg_llm:1.50"
+cluster_candidate_topk = 80
+cluster_max_per_cluster = 3
+community_reg_weight = 0.02
+
+# baseline topk 参数。
+buy_topk = 20
+hold_topk = 50
+max_positions = 20
+
+# 动量确认策略参数。
+momentum_candidate_topk = 40
+momentum_final_topk = 10
+require_positive_ret_20d = true
+require_positive_ret_60d = true
+
+# 股票池过滤参数。
+liquidity_quantile = 0.2
+momentum_liquidity_quantile = 0.3
+min_price = 2.0
+exclude_st = true
+
+# 消融实验执行器配置。target 可填写单个 profile，或下方 profile_groups 中的实验组。
+[ablation_runner]
+target = "phase1_relation_aware"
+start_month = "202503"
+end_month = "202601"
+dataset_name = "202503_202601"
+# dry_run 仅打印执行顺序；collect_only 仅汇总已有结果，两者不能同时开启。
+dry_run = false
+collect_only = false
+
+# 第一阶段：关系感知图聚合。保留 cross_encoder 融合，同时让股票图使用边类型和边权。
+[profiles.phase1_relation_aware]
+experiment_name = "关系感知图聚合主模型"
+experiment_description = "cross_encoder 融合 + 关系感知图聚合"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+
+# 第一阶段 MSE 对照组：架构不变，只把排序学习换回收益回归。
+[profiles.phase1_relation_aware_mse_baseline]
+experiment_name = "MSE 收益回归对照"
+experiment_description = "保持架构不变，将 RankNet 换为收益回归"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+training_objective = "regression_mse"
+
+# Label 消融：架构和 RankNet 不变，将训练标签从未来超额收益换成未来超额 Sharpe。
+[profiles.phase1_relation_aware_sharpe_label]
+experiment_name = "Sharpe 标签消融"
+experiment_description = "保持架构和 RankNet，将标签改为未来超额 Sharpe"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+training_objective = "ranknet_pairwise"
+training_label = "future_excess_sharpe_1m"
+
+# 图模块消融：cross_encoder 融合 + 原始均值图聚合。
+[profiles.graph_mean_baseline]
+experiment_name = "均值图聚合对照"
+experiment_description = "cross_encoder 融合 + 原始均值图聚合"
+fusion_type = "cross_encoder"
+graph_module_type = "mean"
+trading_strategy = "topk"
+
+# 图模块消融：cross_encoder 融合 + 关系感知图聚合。
+[profiles.graph_relation_aware]
+experiment_name = "关系感知图聚合对照"
+experiment_description = "cross_encoder 融合 + 关系感知图聚合"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+trading_strategy = "topk"
+
+# 方案 B：cross_encoder 融合 + 关系感知图聚合 + 可学习 edge type prior。
+[profiles.phase1_relation_aware_type_prior]
+experiment_name = "可学习边类型先验"
+experiment_description = "关系感知图聚合 + 可学习 edge type prior"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "learnable"
+trading_strategy = "topk"
+
+[profiles.cluster_trading_louvain]
+experiment_name = "Louvain 聚类交易"
+experiment_description = "关系感知图 + Louvain 社区聚类 + cluster_topk"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+cluster_method = "louvain"
+cluster_resolution = 1.2
+trading_strategy = "cluster_topk"
+
+[profiles.cluster_trading_label_propagation]
+experiment_name = "标签传播聚类交易"
+experiment_description = "关系感知图 + 标签传播聚类 + cluster_topk"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+cluster_method = "label_propagation"
+trading_strategy = "cluster_topk"
+
+[profiles.industry_cluster_baseline]
+experiment_name = "行业聚类对照"
+experiment_description = "关系感知图 + 行业聚类基线 + cluster_topk"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+edge_type_prior_mode = "none"
+cluster_method = "industry_baseline"
+trading_strategy = "cluster_topk"
+
+[profiles.community_aware_gnn]
+experiment_name = "社区感知 GNN"
+experiment_description = "社区感知图模块 + 社区正则"
+fusion_type = "cross_encoder"
+graph_module_type = "community_aware"
+edge_type_prior_mode = "none"
+cluster_method = "leiden"
+trading_strategy = "cluster_topk"
+community_reg_weight = 0.02
+
+[profiles.community_aware_no_reg]
+experiment_name = "社区感知无正则对照"
+experiment_description = "社区感知图模块，不使用社区正则"
+fusion_type = "cross_encoder"
+graph_module_type = "community_aware"
+edge_type_prior_mode = "none"
+cluster_method = "leiden"
+trading_strategy = "cluster_topk"
+community_reg_weight = 0.0
+
+# 图构建消融基线：仅研报股票池 + 研报共覆盖普通边，不作为主线股票池。
+[profiles.graph_report_only_baseline]
+experiment_name = "研报股票池图构建对照"
+experiment_description = "仅研报股票池 + 研报共覆盖普通边"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+stock_universe = "report_only"
+stock_edge_builders = "report_co_coverage"
+market_data_source = "akshare"
+trading_strategy = "topk"
+
+# HS300/ZZ500 固定股票池 + 市场相似边。
+[profiles.graph_market_corr]
+experiment_name = "市场相似边对照"
+experiment_description = "HS300/ZZ500 股票池 + 市场相似边"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+stock_universe = "hs300_zz500"
+stock_edge_builders = "market_corr_topk"
+market_data_source = "akshare"
+trading_strategy = "topk"
+
+# HS300/ZZ500 固定股票池 + 同行业相似边。
+[profiles.graph_market_corr_industry]
+experiment_name = "市场与行业边对照"
+experiment_description = "HS300/ZZ500 股票池 + 同行业相似边"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+stock_universe = "hs300_zz500"
+stock_edge_builders = "same_industry_topk"
+market_data_source = "akshare"
+trading_strategy = "topk"
+
+# HS300/ZZ500 固定股票池 + 市场相似边 + 同行业相似边。
+[profiles.graph_hszz_market_corr_industry]
+experiment_name = "多来源股票图主线"
+experiment_description = "市场相似边 + 同行业边 + LLM 知识边"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+stock_universe = "hs300_zz500"
+stock_edge_builders = "market_corr_topk,same_industry_topk,kg_llm"
+market_data_source = "akshare"
+market_corr_lookback_days = 60
+market_corr_topk = 10
+market_corr_min_score = 0.1
+industry_topk = 5
+trading_strategy = "topk"
+
+# 消融实验：最简单 concat 融合 + 原始均值图聚合。
+[profiles.fusion_concat]
+experiment_name = "Concat 融合消融"
+experiment_description = "concat 融合 + 原始均值图聚合"
+fusion_type = "concat"
+graph_module_type = "mean"
+trading_strategy = "topk"
+
+# 消融实验：门控融合 + 原始均值图聚合。
+[profiles.fusion_gated]
+experiment_name = "门控融合消融"
+experiment_description = "门控融合 + 原始均值图聚合"
+fusion_type = "gated"
+graph_module_type = "mean"
+trading_strategy = "topk"
+
+# 消融实验：cross_encoder 融合 + 原始均值图聚合。
+[profiles.fusion_cross_encoder]
+experiment_name = "Cross Encoder 融合消融"
+experiment_description = "cross_encoder 融合 + 原始均值图聚合"
+fusion_type = "cross_encoder"
+graph_module_type = "mean"
+trading_strategy = "topk"
+
+# 规则策略：TopK 买入 + Hold 缓冲，降低月度换手。
+[profiles.rule_topk_buffer]
+experiment_name = "TopK 缓冲策略"
+experiment_description = "TopK 买入 + Hold 缓冲降低月度换手"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+trading_strategy = "topk_buffer"
+buy_topk = 20
+hold_topk = 50
+max_positions = 20
+liquidity_quantile = 0.2
+min_price = 2.0
+exclude_st = true
+
+# 规则策略：模型高分候选 + 20/60日正动量确认。
+[profiles.rule_momentum_confirmed]
+experiment_name = "动量确认策略"
+experiment_description = "模型高分候选 + 20/60 日正动量确认"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+trading_strategy = "momentum_confirmed"
+momentum_candidate_topk = 40
+momentum_final_topk = 10
+require_positive_ret_20d = true
+require_positive_ret_60d = true
+momentum_liquidity_quantile = 0.3
+min_price = 2.0
+exclude_st = true
+
+# 交易策略：月度 TopK/Buffer 生成目标组合，日频K线执行买卖、涨跌停过滤、止损与滑点。
+[profiles.rule_daily_execution]
+experiment_name = "日频执行策略"
+experiment_description = "月度组合信号 + 日频行情执行、止损和滑点"
+fusion_type = "cross_encoder"
+graph_module_type = "relation_aware"
+trading_strategy = "topk_buffer"
+execution_mode = "daily"
+buy_topk = 20
+hold_topk = 50
+max_positions = 20
+liquidity_quantile = 0.2
+min_price = 2.0
+exclude_st = true
+entry_delay_days = 1
+stop_loss_pct = 0.08
+trailing_stop_pct = 0.0
+limit_threshold_pct = 9.8
+slippage_bps = 5.0
+max_monthly_turnover = 0.5
+entry_trigger = "pullback_or_breakout"
+entry_window_days = 15
+min_pullback_pct = 0.03
+max_pullback_pct = 0.08
+breakout_lookback_days = 20
+breakout_volume_multiplier = 1.2
+
+# 一次性跑多个 profile 的组合。
+[profile_groups]
+fusion_all = [
+  "phase1_relation_aware",
+  "fusion_concat",
+  "fusion_gated",
+  "fusion_cross_encoder",
+]
+
+strategy_all = [
+  "phase1_relation_aware",
+  "rule_topk_buffer",
+  "rule_momentum_confirmed",
+  "rule_daily_execution",
+]
+
+fusion_ablation = [
+  "fusion_concat",
+  "fusion_gated",
+  "fusion_cross_encoder",
+]
+
+graph_ablation = [
+  "graph_mean_baseline",
+  "graph_relation_aware",
+  "graph_report_only_baseline",
+  "graph_market_corr",
+  "graph_market_corr_industry",
+  "graph_hszz_market_corr_industry",
+]
+
+strategy_ablation = [
+  "phase1_relation_aware",
+  "rule_topk_buffer",
+  "rule_momentum_confirmed",
+  "rule_daily_execution",
+]
+
+objective_ablation = [
+  "phase1_relation_aware",
+  "phase1_relation_aware_mse_baseline",
+]
+
+label_ablation = [
+  "phase1_relation_aware",
+  "phase1_relation_aware_sharpe_label",
+]
+
+ablation_all = [
+  "fusion_concat",
+  "fusion_gated",
+  "fusion_cross_encoder",
+  "graph_mean_baseline",
+  "graph_relation_aware",
+  "phase1_relation_aware",
+  "phase1_relation_aware_mse_baseline",
+  "phase1_relation_aware_sharpe_label",
+  "rule_topk_buffer",
+  "rule_momentum_confirmed",
+  "rule_daily_execution",
+]

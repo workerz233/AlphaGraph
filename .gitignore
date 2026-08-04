@@ -1,0 +1,22 @@
+.DS_Store
+
+# Python bytecode and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local environments and tooling
+.env
+.env.*
+.venv/
+venv/
+.idea/
+.vscode/
+
+# Generated pipeline outputs
+artifacts/
+dist/
+build/
+*.egg-info/

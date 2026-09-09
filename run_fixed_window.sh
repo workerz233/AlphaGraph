@@ -8,16 +8,16 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 usage() {
   cat <<'EOF'
 用法：
-  bash alphagraph/run_202501_202601.sh [--dry-run] [配置名或配置组]
+  bash alphagraph/run_fixed_window.sh [--dry-run] [配置名或配置组]
 
 默认配置名：
   phase1_relation_aware
 
 示例：
-  bash alphagraph/run_202501_202601.sh
-  bash alphagraph/run_202501_202601.sh rule_daily_execution
-  bash alphagraph/run_202501_202601.sh strategy_all
-  bash alphagraph/run_202501_202601.sh --dry-run strategy_all
+  bash alphagraph/run_fixed_window.sh
+  bash alphagraph/run_fixed_window.sh rule_daily_execution
+  bash alphagraph/run_fixed_window.sh strategy_all
+  bash alphagraph/run_fixed_window.sh --dry-run strategy_all
 
 该脚本固定默认验证区间为 202503~202601，并写入：
   artifacts/alphagraph/202503_202601/

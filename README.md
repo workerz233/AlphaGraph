@@ -97,6 +97,13 @@ bash alphagraph/run_pipeline.sh rule_daily_execution
 bash alphagraph/run_pipeline.sh strategy_all
 ```
 
+固定验证窗口（默认 `202503`~`202601`）：
+
+```bash
+bash alphagraph/run_fixed_window.sh
+bash alphagraph/run_fixed_window.sh --dry-run strategy_all
+```
+
 完整流程依次执行：
 
 1. 构建基础行情、财务、研报和图数据
